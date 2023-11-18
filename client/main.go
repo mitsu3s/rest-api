@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -22,27 +25,47 @@ func main() {
 	// ルーティングを設定
 	e.GET("/", func(c echo.Context) error {
 		message := map[string]string{
-			"ID":   "1",
-			"Name": "User1",
+			"message": "Connected!",
 		}
 		return c.JSON(http.StatusOK, message)
 	})
 
 	e.POST("/", func(c echo.Context) error {
-		var notification map[string]string
-		if err := c.Bind(&notification); err != nil {
+		body, err := io.ReadAll(c.Request().Body)
+		if err != nil {
 			return err
 		}
 
-		if notification["status"] == "OK" {
-			fmt.Println(notification["status"])
-		} else {
-			fmt.Println(notification["message"])
+		if err := writeDevice(body); err != nil {
+			fmt.Println("Error writing to JSON file:", err)
+			return err
 		}
-		return nil
+		return c.String(http.StatusOK, "OK")
 	})
 
 	// サーバーを開始
-	// e.Logger.Fatal(e.Start(":1323"))
 	e.Start(":1323")
+}
+
+func writeDevice(data []byte) error {
+	var parsedData interface{}
+	if err := json.Unmarshal(data, &parsedData); err != nil {
+		return err
+	}
+
+	// JSONファイルに書き込む
+	file, err := os.Create("devices.json")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+
+	if err := encoder.Encode(parsedData); err != nil {
+		return err
+	}
+
+	return nil
 }

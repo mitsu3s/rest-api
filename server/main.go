@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 )
 
 func main() {
@@ -42,51 +41,29 @@ func main() {
 		handleError(url, err)
 		return
 	}
+	fmt.Println(responseData)
 
-	// JSONレスポンスを保存するファイルを作成
-	file, err := os.Create("response.json")
+	// JSON文字列を定義
+	devices := []map[string]interface{}{
+		{"id": 1, "name": "device1"},
+		{"id": 2, "name": "device2"},
+	}
+
+	v, err := json.Marshal(devices)
 	if err != nil {
-		handleError(url, err)
+		fmt.Println("JSON Marshal error:", err)
 		return
 	}
 
-	defer file.Close()
-
-	// JSONをエンコードしてファイルに書き込み
-	encoder := json.NewEncoder(file)
-	if err := encoder.Encode(responseData); err != nil {
-		handleError(url, err)
+	response, err = http.Post(url, "application/json", bytes.NewBuffer(v))
+	if err != nil {
+		fmt.Println("HTTP POST error:", err)
+		return
 	}
-	handleSuccess(url)
-
-	fmt.Println("Success!")
+	defer response.Body.Close()
+	fmt.Println("Status:", response.Status)
 }
 
 func handleError(url string, err error) {
-	sendNotification(url, "Error", err)
 	log.Fatal(err)
-}
-
-func handleSuccess(url string) {
-	sendNotification(url, "OK", nil)
-}
-
-func sendNotification(url, status string, err error) {
-	// 送信するJSONを作成
-	notification := map[string]string{
-		"status":  status,
-		"message": "",
-	}
-	if err != nil {
-		notification["message"] = err.Error()
-	}
-
-	// JSON形式にエンコード
-	jsonValue, _ := json.Marshal(notification)
-
-	// POSTリクエストを送信
-	_, err = http.Post(url, "application/json", bytes.NewBuffer(jsonValue))
-	if err != nil {
-		log.Fatal(err)
-	}
 }
