@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -43,6 +44,7 @@ func main() {
 	// JSONレスポンスを保存するファイルを作成
 	file, err := os.Create("response.json")
 	if err != nil {
+		writeError(url, err)
 		log.Fatal(err)
 	}
 
@@ -51,8 +53,30 @@ func main() {
 	// JSONをエンコードしてファイルに書き込み
 	encoder := json.NewEncoder(file)
 	if err := encoder.Encode(responseData); err != nil {
+		writeError(url, err)
 		log.Fatal(err)
 	}
+	writeSuccess(url)
 
 	fmt.Println("Success!")
+}
+
+func writeSuccess(url string) {
+	notification := map[string]string{"status": "OK"}
+	jsonValue, _ := json.Marshal(notification)
+
+	_, err := http.Post(url, "application/json", bytes.NewBuffer(jsonValue))
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func writeError(url string, err error) {
+	notifivation := map[string]string{"status": "Error", "message": err.Error()}
+	jsonValue, _ := json.Marshal(notifivation)
+
+	_, err = http.Post(url, "application/json", bytes.NewBuffer(jsonValue))
+	if err != nil {
+		log.Fatal(err)
+	}
 }
