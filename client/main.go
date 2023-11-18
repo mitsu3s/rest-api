@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 
@@ -22,7 +22,7 @@ func main() {
 		Format: "method=${method}, uri=${uri}, status=${status}\n",
 	}))
 
-	// ルーティングを設定
+	// ルーティングを設定（接続確認）
 	e.GET("/", func(c echo.Context) error {
 		message := map[string]string{
 			"message": "Connected!",
@@ -30,15 +30,16 @@ func main() {
 		return c.JSON(http.StatusOK, message)
 	})
 
+	// ルーティングを設定（JSON受け取り）
 	e.POST("/", func(c echo.Context) error {
 		body, err := io.ReadAll(c.Request().Body)
 		if err != nil {
-			return err
+			handleError(err)
 		}
 
+		// JSONファイルに書き込み
 		if err := writeDevice(body); err != nil {
-			fmt.Println("Error writing to JSON file:", err)
-			return err
+			handleError(err)
 		}
 		return c.String(http.StatusOK, "OK")
 	})
@@ -50,13 +51,13 @@ func main() {
 func writeDevice(data []byte) error {
 	var parsedData interface{}
 	if err := json.Unmarshal(data, &parsedData); err != nil {
-		return err
+		handleError(err)
 	}
 
-	// JSONファイルに書き込む
+	// JSONファイルに書き込み
 	file, err := os.Create("devices.json")
 	if err != nil {
-		return err
+		handleError(err)
 	}
 	defer file.Close()
 
@@ -64,8 +65,12 @@ func writeDevice(data []byte) error {
 	encoder.SetIndent("", "  ")
 
 	if err := encoder.Encode(parsedData); err != nil {
-		return err
+		handleError(err)
 	}
 
 	return nil
+}
+
+func handleError(err error) {
+	log.Fatal(err)
 }
