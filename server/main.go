@@ -18,7 +18,7 @@ func main() {
 	// GETリクエストを送信して接続確認
 	response, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
+		handleError(url, err)
 	}
 	// CloseしてTCPコネクションを開きっぱなしにしない
 	defer response.Body.Close()
@@ -32,20 +32,22 @@ func main() {
 	// レスポンスボディを読み込み
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		log.Fatal(err)
+		handleError(url, err)
+		return
 	}
 
 	// JSONを構造体にエンコード
 	var responseData map[string]interface{}
 	if err := json.Unmarshal(body, &responseData); err != nil {
-		log.Fatal(err)
+		handleError(url, err)
+		return
 	}
 
 	// JSONレスポンスを保存するファイルを作成
 	file, err := os.Create("response.json")
 	if err != nil {
-		writeError(url, err)
-		log.Fatal(err)
+		handleError(url, err)
+		return
 	}
 
 	defer file.Close()
@@ -53,28 +55,36 @@ func main() {
 	// JSONをエンコードしてファイルに書き込み
 	encoder := json.NewEncoder(file)
 	if err := encoder.Encode(responseData); err != nil {
-		writeError(url, err)
-		log.Fatal(err)
+		handleError(url, err)
 	}
-	writeSuccess(url)
+	handleSuccess(url)
 
 	fmt.Println("Success!")
 }
 
-func writeSuccess(url string) {
-	notification := map[string]string{"status": "OK"}
-	jsonValue, _ := json.Marshal(notification)
-
-	_, err := http.Post(url, "application/json", bytes.NewBuffer(jsonValue))
-	if err != nil {
-		log.Fatal(err)
-	}
+func handleError(url string, err error) {
+	sendNotification(url, "Error", err)
+	log.Fatal(err)
 }
 
-func writeError(url string, err error) {
-	notifivation := map[string]string{"status": "Error", "message": err.Error()}
-	jsonValue, _ := json.Marshal(notifivation)
+func handleSuccess(url string) {
+	sendNotification(url, "OK", nil)
+}
 
+func sendNotification(url, status string, err error) {
+	// 送信するJSONを作成
+	notification := map[string]string{
+		"status":  status,
+		"message": "",
+	}
+	if err != nil {
+		notification["message"] = err.Error()
+	}
+
+	// JSON形式にエンコード
+	jsonValue, _ := json.Marshal(notification)
+
+	// POSTリクエストを送信
 	_, err = http.Post(url, "application/json", bytes.NewBuffer(jsonValue))
 	if err != nil {
 		log.Fatal(err)

@@ -22,7 +22,8 @@ func main() {
 	// ルーティングを設定
 	e.GET("/", func(c echo.Context) error {
 		message := map[string]string{
-			"message": "Hello, World!",
+			"ID":   "1",
+			"Name": "User1",
 		}
 		return c.JSON(http.StatusOK, message)
 	})
