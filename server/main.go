@@ -11,8 +11,7 @@ import (
 
 func main() {
 	// 受け取るURLを指定（接続確認にも使用）
-	url := "http://localhost:1323"
-	// url := "http://host.docker.internal:1323"
+	url := "http://host.docker.internal:1323"
 
 	// GETリクエストを送信して接続確認
 	response, err := http.Get(url)
@@ -41,7 +40,7 @@ func main() {
 		handleError(url, err)
 		return
 	}
-	fmt.Println(responseData)
+	fmt.Println(responseData["message"])
 
 	// JSON文字列を定義
 	devices := []map[string]interface{}{
@@ -61,7 +60,7 @@ func main() {
 		return
 	}
 	defer response.Body.Close()
-	fmt.Println("Status:", response.Status)
+	fmt.Println("Success! Status:", response.Status)
 }
 
 func handleError(url string, err error) {
