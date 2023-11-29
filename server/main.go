@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	// Cloud Controllerの想定
 	// 受け取るURLを指定（接続確認にも使用）
 	url := "http://host.docker.internal:1323"
 

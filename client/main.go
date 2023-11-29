@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+	// Adapterの想定
 	// Echo instanceを作成
 	e := echo.New()
 
