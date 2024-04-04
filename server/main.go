@@ -64,6 +64,6 @@ func main() {
 	fmt.Println("Success! Status:", response.Status)
 }
 
-func handleError(url string, err error) {
+func handleError(_ string, err error) {
 	log.Fatal(err)
 }
